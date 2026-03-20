@@ -1,0 +1,26 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+
+# Node
+node_modules/
+dist/
+
+# Anchor
+.anchor/
+anchor/target/
+
+# Solana
+test-ledger/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDL + types (generated)
+anchor/target/idl/
+anchor/target/types/
