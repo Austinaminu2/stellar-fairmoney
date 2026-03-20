@@ -6,7 +6,7 @@ pub mod state;
 
 use instructions::*;
 
-declare_id!("SFLWxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+declare_id!("GdGbp1YQJxSwjTU9sa5JDnDwLoU3tbtgwLT7UyEJ4rWd");
 
 #[program]
 pub mod stellar_flow {

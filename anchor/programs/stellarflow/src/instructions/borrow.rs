@@ -8,34 +8,42 @@ pub fn borrow(ctx: Context<Borrow>, amount: u64) -> Result<()> {
     require!(!ctx.accounts.market.is_paused, StellarFlowError::MarketPaused);
     require!(ctx.accounts.reserve.is_active, StellarFlowError::ReserveNotActive);
 
-    let reserve = &ctx.accounts.reserve;
-    let collateral_position = &ctx.accounts.collateral_position;
+    let clock = Clock::get()?;
+
+    let collateral_deposited = ctx.accounts.collateral_position.deposited_amount;
+    let collateral_ltv = ctx.accounts.collateral_reserve.ltv_bps;
+    let collateral_price = ctx.accounts.collateral_reserve.mock_price;
+    let borrow_price = ctx.accounts.reserve.mock_price;
+    let already_borrowed = ctx.accounts.borrow_position.borrowed_amount;
+    let total_deposits = ctx.accounts.reserve.total_deposits;
+    let total_borrows = ctx.accounts.reserve.total_borrows;
+    let borrow_rate = ctx.accounts.reserve.borrow_rate_bps();
+    let reserve_key = ctx.accounts.reserve.key();
 
     // Calculate collateral value in USD (scaled by 1e6)
-    let collateral_value = collateral_position.deposited_amount
-        .checked_mul(ctx.accounts.collateral_reserve.mock_price)
+    let collateral_value = collateral_deposited
+        .checked_mul(collateral_price)
         .ok_or(StellarFlowError::MathOverflow)?
         / 1_000_000;
 
     // Maximum borrow value based on LTV
     let max_borrow_value = collateral_value
-        .checked_mul(ctx.accounts.collateral_reserve.ltv_bps)
+        .checked_mul(collateral_ltv)
         .ok_or(StellarFlowError::MathOverflow)?
         / 10_000;
 
     // Current borrow value including this new borrow
-    let borrow_value = (collateral_position.borrowed_amount + amount)
-        .checked_mul(reserve.mock_price)
+    let borrow_value = (already_borrowed + amount)
+        .checked_mul(borrow_price)
         .ok_or(StellarFlowError::MathOverflow)?
         / 1_000_000;
 
     require!(borrow_value <= max_borrow_value, StellarFlowError::InsufficientCollateral);
 
     // Check liquidity
-    let available_liquidity = reserve.total_deposits.saturating_sub(reserve.total_borrows);
+    let available_liquidity = total_deposits.saturating_sub(total_borrows);
     require!(available_liquidity >= amount, StellarFlowError::InsufficientLiquidity);
 
-    let clock = Clock::get()?;
     let market_key = ctx.accounts.market.key();
     let token_mint_key = ctx.accounts.reserve.token_mint;
     let reserve_bump = ctx.accounts.reserve.bump;
@@ -63,19 +71,19 @@ pub fn borrow(ctx: Context<Borrow>, amount: u64) -> Result<()> {
     )?;
 
     // Update reserve
-    let reserve = &mut ctx.accounts.reserve;
-    reserve.total_borrows = reserve.total_borrows.checked_add(amount)
+    ctx.accounts.reserve.total_borrows = total_borrows
+        .checked_add(amount)
         .ok_or(StellarFlowError::MathOverflow)?;
-    reserve.last_update_timestamp = clock.unix_timestamp;
+    ctx.accounts.reserve.last_update_timestamp = clock.unix_timestamp;
 
     // Update user borrow position
-    let borrow_position = &mut ctx.accounts.borrow_position;
-    borrow_position.owner = ctx.accounts.user.key();
-    borrow_position.reserve = ctx.accounts.reserve.key();
-    borrow_position.borrowed_amount = borrow_position.borrowed_amount.checked_add(amount)
+    ctx.accounts.borrow_position.owner = ctx.accounts.user.key();
+    ctx.accounts.borrow_position.reserve = reserve_key;
+    ctx.accounts.borrow_position.borrowed_amount = already_borrowed
+        .checked_add(amount)
         .ok_or(StellarFlowError::MathOverflow)?;
-    borrow_position.last_borrow_rate = reserve.borrow_rate_bps();
-    borrow_position.last_update_timestamp = clock.unix_timestamp;
+    ctx.accounts.borrow_position.last_borrow_rate = borrow_rate;
+    ctx.accounts.borrow_position.last_update_timestamp = clock.unix_timestamp;
 
     emit!(BorrowEvent {
         user: ctx.accounts.user.key(),
