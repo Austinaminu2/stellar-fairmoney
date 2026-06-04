@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { BN, Program } from "@coral-xyz/anchor";
-import { StellarFlow } from "../target/types/stellar_flow";
+import { FairMoney } from "../target/types/stellar_fairmoney";
 import {
   Keypair,
   PublicKey,
@@ -16,13 +16,13 @@ import {
 } from "@solana/spl-token";
 import { BankrunProvider, startAnchor } from "anchor-bankrun";
 
-const IDL = require("../target/idl/stellar_flow.json");
+const IDL = require("../target/idl/stellar_fairmoney.json");
 const PROGRAM_ID = new PublicKey("SFLWxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 
-describe("StellarFlow - Decentralized Lending Protocol", () => {
+describe("FairMoney - Decentralized Lending Protocol", () => {
   let context: any;
   let provider: BankrunProvider;
-  let program: Program<StellarFlow>;
+  let program: Program<FairMoney>;
 
   // Keypairs
   let authority: Keypair;
@@ -55,11 +55,11 @@ describe("StellarFlow - Decentralized Lending Protocol", () => {
 
     context = await startAnchor(
       "",
-      [{ name: "stellar_flow", programId: PROGRAM_ID }],
+      [{ name: "stellar_fairmoney", programId: PROGRAM_ID }],
       []
     );
     provider = new BankrunProvider(context);
-    program = new Program<StellarFlow>(IDL, provider);
+    program = new Program<FairMoney>(IDL, provider);
 
     // Airdrop SOL to accounts
     await provider.context.banksClient.requestAirdrop(

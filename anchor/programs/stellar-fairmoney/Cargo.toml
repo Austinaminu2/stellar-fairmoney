@@ -1,12 +1,12 @@
 [package]
 name = "stellar-flow"
 version = "0.1.0"
-description = "StellarFlow - Decentralized Lending Protocol on Solana"
+description = "FairMoney - Decentralized Lending Protocol on Solana"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "stellar_flow"
+name = "stellar_fairmoney"
 
 [features]
 default = []

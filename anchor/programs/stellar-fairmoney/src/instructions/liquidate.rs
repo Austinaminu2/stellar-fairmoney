@@ -1,11 +1,11 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use crate::state::{Market, Reserve, UserPosition};
-use crate::errors::StellarFlowError;
+use crate::errors::FairMoneyError;
 
 pub fn liquidate(ctx: Context<Liquidate>, repay_amount: u64) -> Result<()> {
-    require!(repay_amount > 0, StellarFlowError::ZeroAmount);
-    require!(!ctx.accounts.market.is_paused, StellarFlowError::MarketPaused);
+    require!(repay_amount > 0, FairMoneyError::ZeroAmount);
+    require!(!ctx.accounts.market.is_paused, FairMoneyError::MarketPaused);
 
     let clock = Clock::get()?;
 
@@ -24,7 +24,7 @@ pub fn liquidate(ctx: Context<Liquidate>, repay_amount: u64) -> Result<()> {
 
     let collateral_value_usd = collateral_deposited
         .checked_mul(collateral_price)
-        .ok_or(StellarFlowError::MathOverflow)?
+        .ok_or(FairMoneyError::MathOverflow)?
         / 1_000_000;
 
     let time_elapsed = (clock.unix_timestamp - last_ts).max(0) as u64;
@@ -38,35 +38,35 @@ pub fn liquidate(ctx: Context<Liquidate>, repay_amount: u64) -> Result<()> {
 
     let borrow_value_usd = total_borrowed
         .checked_mul(borrow_price)
-        .ok_or(StellarFlowError::MathOverflow)?
+        .ok_or(FairMoneyError::MathOverflow)?
         / 1_000_000;
 
     let liquidation_threshold_value = collateral_value_usd
         .checked_mul(collateral_lthr)
-        .ok_or(StellarFlowError::MathOverflow)?
+        .ok_or(FairMoneyError::MathOverflow)?
         / 10_000;
 
     require!(
         borrow_value_usd > liquidation_threshold_value,
-        StellarFlowError::PositionHealthy
+        FairMoneyError::PositionHealthy
     );
 
     let max_repay = total_borrowed / 2;
-    require!(repay_amount <= max_repay, StellarFlowError::LiquidationAmountTooLarge);
+    require!(repay_amount <= max_repay, FairMoneyError::LiquidationAmountTooLarge);
 
     let repay_value_usd = repay_amount
         .checked_mul(borrow_price)
-        .ok_or(StellarFlowError::MathOverflow)?
+        .ok_or(FairMoneyError::MathOverflow)?
         / 1_000_000;
 
     let collateral_to_seize_usd = repay_value_usd
         .checked_mul(10_000 + collateral_bonus)
-        .ok_or(StellarFlowError::MathOverflow)?
+        .ok_or(FairMoneyError::MathOverflow)?
         / 10_000;
 
     let collateral_to_seize = collateral_to_seize_usd
         .checked_mul(1_000_000)
-        .ok_or(StellarFlowError::MathOverflow)?
+        .ok_or(FairMoneyError::MathOverflow)?
         / collateral_price.max(1);
 
     let collateral_to_seize = collateral_to_seize.min(collateral_deposited);

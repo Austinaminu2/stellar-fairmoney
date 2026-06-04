@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use crate::state::{Market, Reserve};
-use crate::errors::StellarFlowError;
+use crate::errors::FairMoneyError;
 
 pub fn initialize_reserve(
     ctx: Context<InitializeReserve>,
@@ -14,7 +14,7 @@ pub fn initialize_reserve(
     slope2: u64,
     mock_price: u64,
 ) -> Result<()> {
-    require!(!ctx.accounts.market.is_paused, StellarFlowError::MarketPaused);
+    require!(!ctx.accounts.market.is_paused, FairMoneyError::MarketPaused);
 
     let clock = Clock::get()?;
     let reserve = &mut ctx.accounts.reserve;

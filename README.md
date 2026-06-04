@@ -1,6 +1,6 @@
-# StellarFlow 🌊
+# FairMoney 🌊
 
-A decentralized lending protocol built on Solana using the Anchor framework. StellarFlow allows users to deposit collateral, borrow against it, earn yield on deposits, and participate in liquidations.
+A decentralized lending protocol built on Solana using the Anchor framework. FairMoney allows users to deposit collateral, borrow against it, earn yield on deposits, and participate in liquidations.
 
 ---
 
@@ -18,9 +18,9 @@ A decentralized lending protocol built on Solana using the Anchor framework. Ste
 ## Architecture
 
 ```
-stellarflow/
+stellar-fairmoney/
 ├── anchor/
-│   ├── programs/stellarflow/src/
+│   ├── programs/stellar-fairmoney/src/
 │   │   ├── lib.rs                        # Program entry point
 │   │   ├── errors.rs                     # Custom error codes
 │   │   ├── instructions/
@@ -36,7 +36,7 @@ stellarflow/
 │   │       ├── reserve.rs                # Per-token reserve state
 │   │       └── user_position.rs          # Per-user position state
 │   └── tests/
-│       └── stellarflow.spec.ts           # Full Bankrun test suite
+│       └── stellar-fairmoney.spec.ts           # Full Bankrun test suite
 ```
 
 ---
@@ -71,7 +71,7 @@ Per-user, per-reserve position.
 
 ## Interest Rate Model
 
-StellarFlow uses a two-slope interest rate model:
+FairMoney uses a two-slope interest rate model:
 
 ```
 If utilization <= optimal:
@@ -108,8 +108,8 @@ This incentivizes utilization near the optimal rate (e.g. 80%) while making borr
 ### Install
 
 ```bash
-git clone https://github.com/yourusername/stellarflow
-cd stellarflow/anchor
+git clone https://github.com/yourusername/stellar-fairmoney
+cd stellar-fairmoney/anchor
 yarn install
 ```
 

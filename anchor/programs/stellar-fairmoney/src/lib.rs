@@ -9,7 +9,7 @@ use instructions::*;
 declare_id!("GdGbp1YQJxSwjTU9sa5JDnDwLoU3tbtgwLT7UyEJ4rWd");
 
 #[program]
-pub mod stellar_flow {
+pub mod stellar_fairmoney {
     use super::*;
 
     /// Initialize a new lending market

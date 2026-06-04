@@ -1,11 +1,11 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use crate::state::{Market, Reserve, UserPosition};
-use crate::errors::StellarFlowError;
+use crate::errors::FairMoneyError;
 
 pub fn repay(ctx: Context<Repay>, amount: u64) -> Result<()> {
-    require!(amount > 0, StellarFlowError::ZeroAmount);
-    require!(!ctx.accounts.market.is_paused, StellarFlowError::MarketPaused);
+    require!(amount > 0, FairMoneyError::ZeroAmount);
+    require!(!ctx.accounts.market.is_paused, FairMoneyError::MarketPaused);
 
     let position = &ctx.accounts.user_position;
     let clock = Clock::get()?;
@@ -18,7 +18,7 @@ pub fn repay(ctx: Context<Repay>, amount: u64) -> Result<()> {
     let total_owed = position.borrowed_amount.saturating_add(accrued_interest);
     let repay_amount = amount.min(total_owed);
 
-    require!(repay_amount > 0, StellarFlowError::InsufficientBorrow);
+    require!(repay_amount > 0, FairMoneyError::InsufficientBorrow);
 
     // Transfer tokens from user to vault
     token::transfer(

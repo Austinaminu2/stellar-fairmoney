@@ -1,22 +1,22 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use crate::state::{Market, Reserve, UserPosition};
-use crate::errors::StellarFlowError;
+use crate::errors::FairMoneyError;
 
 pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-    require!(amount > 0, StellarFlowError::ZeroAmount);
-    require!(!ctx.accounts.market.is_paused, StellarFlowError::MarketPaused);
+    require!(amount > 0, FairMoneyError::ZeroAmount);
+    require!(!ctx.accounts.market.is_paused, FairMoneyError::MarketPaused);
 
     let position = &ctx.accounts.user_position;
     require!(
         position.deposited_amount >= amount,
-        StellarFlowError::InsufficientDeposit
+        FairMoneyError::InsufficientDeposit
     );
 
     let reserve = &ctx.accounts.reserve;
     require!(
         reserve.total_deposits.saturating_sub(reserve.total_borrows) >= amount,
-        StellarFlowError::InsufficientLiquidity
+        FairMoneyError::InsufficientLiquidity
     );
 
     let clock = Clock::get()?;
@@ -50,13 +50,13 @@ pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
     // Update reserve
     let reserve = &mut ctx.accounts.reserve;
     reserve.total_deposits = reserve.total_deposits.checked_sub(amount)
-        .ok_or(StellarFlowError::MathOverflow)?;
+        .ok_or(FairMoneyError::MathOverflow)?;
     reserve.last_update_timestamp = clock.unix_timestamp;
 
     // Update position
     let position = &mut ctx.accounts.user_position;
     position.deposited_amount = position.deposited_amount.checked_sub(amount)
-        .ok_or(StellarFlowError::MathOverflow)?;
+        .ok_or(FairMoneyError::MathOverflow)?;
     position.last_update_timestamp = clock.unix_timestamp;
 
     emit!(WithdrawEvent {

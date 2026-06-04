@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use crate::state::{Market, Reserve, UserPosition};
-use crate::errors::StellarFlowError;
+use crate::errors::FairMoneyError;
 
 pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-    require!(amount > 0, StellarFlowError::ZeroAmount);
-    require!(!ctx.accounts.market.is_paused, StellarFlowError::MarketPaused);
-    require!(ctx.accounts.reserve.is_active, StellarFlowError::ReserveNotActive);
+    require!(amount > 0, FairMoneyError::ZeroAmount);
+    require!(!ctx.accounts.market.is_paused, FairMoneyError::MarketPaused);
+    require!(ctx.accounts.reserve.is_active, FairMoneyError::ReserveNotActive);
 
     let clock = Clock::get()?;
 
@@ -26,7 +26,7 @@ pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
     // Update reserve
     let reserve = &mut ctx.accounts.reserve;
     reserve.total_deposits = reserve.total_deposits.checked_add(amount)
-        .ok_or(StellarFlowError::MathOverflow)?;
+        .ok_or(FairMoneyError::MathOverflow)?;
     reserve.last_update_timestamp = clock.unix_timestamp;
 
     // Update user position
@@ -34,7 +34,7 @@ pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
     position.owner = ctx.accounts.user.key();
     position.reserve = ctx.accounts.reserve.key();
     position.deposited_amount = position.deposited_amount.checked_add(amount)
-        .ok_or(StellarFlowError::MathOverflow)?;
+        .ok_or(FairMoneyError::MathOverflow)?;
     position.last_update_timestamp = clock.unix_timestamp;
 
     emit!(DepositEvent {

@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 #[error_code]
-pub enum StellarFlowError {
+pub enum FairMoneyError {
     #[msg("Market is paused")]
     MarketPaused,
     #[msg("Reserve is not active")]

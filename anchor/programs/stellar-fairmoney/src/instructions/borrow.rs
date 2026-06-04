@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use crate::state::{Market, Reserve, UserPosition};
-use crate::errors::StellarFlowError;
+use crate::errors::FairMoneyError;
 
 pub fn borrow(ctx: Context<Borrow>, amount: u64) -> Result<()> {
-    require!(amount > 0, StellarFlowError::ZeroAmount);
-    require!(!ctx.accounts.market.is_paused, StellarFlowError::MarketPaused);
-    require!(ctx.accounts.reserve.is_active, StellarFlowError::ReserveNotActive);
+    require!(amount > 0, FairMoneyError::ZeroAmount);
+    require!(!ctx.accounts.market.is_paused, FairMoneyError::MarketPaused);
+    require!(ctx.accounts.reserve.is_active, FairMoneyError::ReserveNotActive);
 
     let clock = Clock::get()?;
 
@@ -23,26 +23,26 @@ pub fn borrow(ctx: Context<Borrow>, amount: u64) -> Result<()> {
     // Calculate collateral value in USD (scaled by 1e6)
     let collateral_value = collateral_deposited
         .checked_mul(collateral_price)
-        .ok_or(StellarFlowError::MathOverflow)?
+        .ok_or(FairMoneyError::MathOverflow)?
         / 1_000_000;
 
     // Maximum borrow value based on LTV
     let max_borrow_value = collateral_value
         .checked_mul(collateral_ltv)
-        .ok_or(StellarFlowError::MathOverflow)?
+        .ok_or(FairMoneyError::MathOverflow)?
         / 10_000;
 
     // Current borrow value including this new borrow
     let borrow_value = (already_borrowed + amount)
         .checked_mul(borrow_price)
-        .ok_or(StellarFlowError::MathOverflow)?
+        .ok_or(FairMoneyError::MathOverflow)?
         / 1_000_000;
 
-    require!(borrow_value <= max_borrow_value, StellarFlowError::InsufficientCollateral);
+    require!(borrow_value <= max_borrow_value, FairMoneyError::InsufficientCollateral);
 
     // Check liquidity
     let available_liquidity = total_deposits.saturating_sub(total_borrows);
-    require!(available_liquidity >= amount, StellarFlowError::InsufficientLiquidity);
+    require!(available_liquidity >= amount, FairMoneyError::InsufficientLiquidity);
 
     let market_key = ctx.accounts.market.key();
     let token_mint_key = ctx.accounts.reserve.token_mint;
@@ -73,7 +73,7 @@ pub fn borrow(ctx: Context<Borrow>, amount: u64) -> Result<()> {
     // Update reserve
     ctx.accounts.reserve.total_borrows = total_borrows
         .checked_add(amount)
-        .ok_or(StellarFlowError::MathOverflow)?;
+        .ok_or(FairMoneyError::MathOverflow)?;
     ctx.accounts.reserve.last_update_timestamp = clock.unix_timestamp;
 
     // Update user borrow position
@@ -81,7 +81,7 @@ pub fn borrow(ctx: Context<Borrow>, amount: u64) -> Result<()> {
     ctx.accounts.borrow_position.reserve = reserve_key;
     ctx.accounts.borrow_position.borrowed_amount = already_borrowed
         .checked_add(amount)
-        .ok_or(StellarFlowError::MathOverflow)?;
+        .ok_or(FairMoneyError::MathOverflow)?;
     ctx.accounts.borrow_position.last_borrow_rate = borrow_rate;
     ctx.accounts.borrow_position.last_update_timestamp = clock.unix_timestamp;
 
